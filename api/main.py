@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field, validator
 from fastapi.responses import JSONResponse
 from typing import List, Optional
 import pandas as pd
-import mlflow.pyfunc
 import mlflow.sklearn
 from contextlib import asynccontextmanager
 

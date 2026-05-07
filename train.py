@@ -12,8 +12,8 @@ from sklearn.compose import ColumnTransformer
 from mlflow.tracking import MlflowClient
 
 
-from .data import load_data, preprocess
-from .evaluate import compute_metrics
+from data import load_data, preprocess
+from evaluate import compute_metrics
 
 def train_model(X, y, model_name: str, params: dict) -> Pipeline:
     """Entraîne le modèle et retourne le pipeline (Fonction demandée étape 1.2)."""
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     mlflow.set_tracking_uri("http://mlflow:5000")
     mlflow.set_experiment("Telco_Churn_Industrialization")
 
-    df = load_data("/app/churnguard/data/telco_churn.csv")
+    df = load_data("data/telco_churn.csv")
     X, y = preprocess(df)
     
     experiments = [

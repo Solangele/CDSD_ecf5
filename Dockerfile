@@ -34,7 +34,7 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # CRUCIAL : Copier le package churnguard ET l'api
-COPY . ./churnguard/
+COPY . /app
 COPY api/ ./api/
 
 # On ajoute le répertoire courant au PYTHONPATH pour que "import churnguard" fonctionne

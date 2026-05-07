@@ -18,12 +18,10 @@ jobs:
           cache: 'pip'
       - name: Install dependencies
         run: pip install ruff
-      - name: Run Ruff
-        # On utilise continue-on-error pour ne pas bloquer le build si c'est juste du style
-        # Mais on garde l'affichage pour que tu puisses voir les erreurs
-        run: |
-          ruff check . --fix || true
-          ruff format . --check || true
+      - name: Run Ruff Check
+        run: ruff check .
+      - name: Run Ruff Format
+        run: ruff format . --check
 
   typecheck:
     runs-on: ubuntu-latest
@@ -39,8 +37,8 @@ jobs:
           pip install mypy pandas mlflow fastapi pydantic pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Run Mypy
-        # On ignore les erreurs de type manquants sur les librairies tierces
-        run: mypy . --ignore-missing-imports --install-types --non-interactive || true
+        # On retire le || true pour que ce soit un vrai test de type
+        run: mypy . --ignore-missing-imports
 
   test:
     runs-on: ubuntu-latest
@@ -57,21 +55,22 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install -e . || true
       - name: Run tests with coverage
-        # On force la sortie pour voir l'erreur réelle
+        # L'option --cov-fail-under=70 est l'exigence du sujet !
         run: |
-          pytest --cov=. --cov-report=term-missing
+          pytest --cov=. --cov-report=term-missing --cov-fail-under=70
 
   build:
     runs-on: ubuntu-latest
+    # Le build ne se lance que si les tests et le lint passent (meilleure pratique)
+    needs: [lint, typecheck, test] 
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
-        run: docker build -t churnguard-api:latest .
+        run: docker build -t churnguard-api:${{ github.sha }} .
       - name: Run Trivy scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'churnguard-api:latest'
+          image-ref: 'churnguard-api:${{ github.sha }}'
           format: 'table'
-          # On passe exit-code à 0 pour que le build ne soit pas tué par les CVE de l'image de base
-          exit-code: '0'
+          exit-code: '0' # On laisse à 0 pour l'ECF sinon l'image de base python risque de bloquer
           severity: 'CRITICAL,HIGH'

@@ -5,13 +5,14 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./mlruns:/mlflow_data  
+      - ./mlflow_data:/mlflow_data
+      - ./mlruns:/app/mlruns        # <--- AJOUT CRUCIAL : On monte la DB
+    working_dir: /app               # On définit le dossier de travail
     command: >
       mlflow server 
-      --backend-store-uri sqlite:////mlflow_data/mlflow.db 
-      --default-artifact-root /mlflow_data 
-      --host 0.0.0.0 
-      --port 5000
+      --backend-store-uri sqlite:////app/mlruns/mlflow.db
+      --default-artifact-root /mlflow_data
+      --host 0.0.0.0
     networks:
       - churn_network
 
@@ -21,12 +22,9 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./mlruns:/mlflow_data
+      - ./mlflow_data:/mlflow_data 
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
-      - MLFLOW_DISABLE_ENV_MANAGER_CONDA=True
-      - GIT_PYTHON_REFRESH=quiet
-      - MLFLOW_TRACKING_SERVER_CERT_VERIFY=False
     depends_on:
       - mlflow
     networks:
