@@ -29,10 +29,10 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install Mypy
-        run: pip install mypy
+        run: pip install mypy pandas-stubs types-requests
       - name: Run Mypy
-        # On cible uniquement un dossier ou on utilise --exit-zero pour valider le job
-        run: mypy . --ignore-missing-imports --exit-zero
+        run: |
+          python -m mypy . --ignore-missing-imports --install-types --non-interactive --exit-zero
 
   test:
     runs-on: ubuntu-latest
