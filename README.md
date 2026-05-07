@@ -269,11 +269,25 @@ networks:
 
 ## Partie CD
 ![alt text](image-6.png)
+https://github.com/Solangele/CDSD_ecf5/pkgs/container/churnguard
+
+
+
+### Tester l'API (Démo)
+Une fois l'image Docker lancée, vous pouvez tester la prédiction avec la commande suivante :
+
+```bash
+curl.exe -X POST "http://localhost:8000/predict" `
+  -H "accept: application/json" `
+  -H "Content-Type: application/json" `
+  -d '{\"customerID\": \"1234-ABCD\", \"gender\": \"Female\", \"SeniorCitizen\": 0, \"Partner\": \"Yes\", \"Dependents\": \"No\", \"tenure\": 1, \"PhoneService\": \"No\", \"MultipleLines\": \"No phone service\", \"InternetService\": \"DSL\", \"OnlineSecurity\": \"No\", \"OnlineBackup\": \"Yes\", \"DeviceProtection\": \"No\", \"TechSupport\": \"No\", \"StreamingTV\": \"No\", \"StreamingMovies\": \"No\", \"Contract\": \"Month-to-month\", \"PaperlessBilling\": \"Yes\", \"PaymentMethod\": \"Electronic check\", \"MonthlyCharges\": 29.85, \"TotalCharges\": \"29.85\"}'
+```
+![alt text](image-7.png)
 
 
 ## Bonus
 Je suis désolée, je n'ai pas fait les bonus. J'ai fais une erreur dans mon arborescence dès le début du projet, ce qui a entraîné des soucis pour le fonctionnement de CI/CD. 
 J'ai changé l'arborescence, mais cela m'a obligé a refaire en partie le projet parce que plus rien ne fonctionnait. J'ai perdu 4 heures dessus. 
 Je préfère rendre quelque chose que je pense propre et fonctionnel plutot que de me lancer dans les bonus qui risquent de m'obliger à rendre un produit non terminé. 
-Un recruteur est également venu dans l'entreprise hier matin (premier jour de l'ECF) et j'ai eu un entretien de 1h15 qui m'a du coup fait perdre un peu de temps sur ce projet.
-Je suis désolée. 
+
+
