@@ -1,79 +1,66 @@
-# ChurnGuard — projet de départ
-
-> **Mission** : industrialiser ce projet en 2 jours selon le cahier des charges fourni
-> (`Sujet_ChurnGuard_MLOps.docx`). Vous ne touchez pas à la data science.
-
-## Contexte
-
-Vous reprenez le projet d'une data scientist de TelcoFr. Elle a entraîné un
-modèle de prédiction de churn dans un notebook qui marche. Personne d'autre que
-elle ne sait le faire tourner.
-
-Votre rôle : transformer ce repo en projet MLOps de production.
-
-## Données
-
-**Telco Customer Churn** (IBM Sample Data, ~960 Ko, 7 043 lignes, 21 colonnes,
-licence libre à des fins éducatives).
-
-Le fichier n'est pas commité dans le repo. Pour le télécharger :
+## Résultat de la vérification des tests (1.3)
 
 ```bash
-python scripts/download_data.py
+python -m pytest --cov=. tests/
+================================================================================================ test session starts ================================================================================================
+platform win32 -- Python 3.11.9, pytest-9.0.3, pluggy-1.6.0
+rootdir: C:\Users\Administrateur\Desktop\CDSD_ecf5\churnguard
+plugins: anyio-4.12.1, cov-7.1.0
+collected 6 items                                                                                                                                                                                                    
+
+tests\test_data.py ....                                                                                                                                                                                        [ 66%]
+tests\test_train.py ..                                                                                                                                                                                         [100%]
+
+================================================================================================== tests coverage ===================================================================================================
+__________________________________________________________________________________ coverage: platform win32, python 3.11.9-final-0 __________________________________________________________________________________
+
+Name                  Stmts   Miss  Cover
+-----------------------------------------
+__init__.py               0      0   100%
+data.py                  11      0   100%
+evaluate.py               7      0   100%
+tests\__init__.py         0      0   100%
+tests\test_data.py       23      0   100%
+tests\test_train.py      24      0   100%
+train.py                 12      0   100%
+-----------------------------------------
+TOTAL                    77      0   100%
+================================================================================================= 6 passed in 3.88s =================================================================================================
 ```
 
-Le script télécharge le CSV depuis un mirror stable et vérifie son intégrité par
-SHA-256.
 
-Sources :
-- [Kaggle — Telco Customer Churn](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
-- [IBM Sample Data Sets](https://www.ibm.com/community/blogs/datasets/)
-
-## Ce qu'il y a dans le repo
-
-```
-.
-├── README.md                       # ce fichier
-├── requirements.txt                # dépendances minimales (pandas, sklearn, jupyter)
-├── notebook/
-│   └── exploration.ipynb           # notebook qui marche, mais qui pue
-├── scripts/
-│   └── download_data.py            # téléchargement + vérification SHA-256
-├── data/
-│   └── .gitkeep                    # le CSV est téléchargé ici
-└── .gitignore
-```
-
-## Démarrage rapide (état initial)
-
-```bash
-# 1. installer les dépendances
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-
-# 2. télécharger les données
-python scripts/download_data.py
-
-# 3. ouvrir le notebook
-jupyter notebook notebook/exploration.ipynb
-```
-
-À ce stade le notebook s'exécute de bout en bout et produit un fichier
-`models/best_model.pkl`. C'est tout. Pas de tests, pas de Docker, pas d'API,
-pas de CI.
-
-## Ce que vous devez faire
-
-Lire le sujet (`Sujet_ChurnGuard_MLOps.docx`), puis livrer :
-
-- un package Python `churnguard/` modulaire avec tests pytest,
-- un setup MLflow (tracking + registry) avec un modèle promu en `Production`,
-- une API FastAPI qui charge le modèle depuis le registry,
-- un Dockerfile multi-stage et un docker-compose qui démarre toute la stack,
-- un workflow GitHub Actions complet (lint, typecheck, tests, build, scan).
+PROJET_CHURN/
+├── .github/workflows/       # CI/CD (GitHub Actions)
+│   └── ci.yaml
+├── data/                    # Données (ignorées par git mais présentes pour Docker)
+│   └── telco_churn.csv
+├── churnguard/              # Ton package (Code source)
+│   ├── __init__.py
+│   ├── data.py
+│   ├── train.py
+│   ├── evaluate.py
+│   └── api.py               <-- Nouveau : Ton serveur FastAPI
+├── tests/                   # Tes tests unitaires
+│   ├── test_data.py
+│   └── test_train.py
+├── scripts/                 # Utilitaires
+│   └── download_data.py
+├── Dockerfile               <-- Nouveau : Image pour l'API
+├── docker-compose.yaml      <-- Nouveau : Orchestration (API + MLflow)
+├── requirements.txt         <-- Nouveau : Dépendances
+└── mlflow.db                # Base SQLite pour MLflow (générée)
 
 
-## Licence
 
-Code : MIT.
-Données : IBM Sample Data, voir conditions sur le site IBM.
+## Création des 3 modèles
+![alt text](image.png)
+
+### Lancement des modèles avec MLflow et choix du meilleur
+![alt text](image-1.png)
+
+## API
+![alt text](image-2.png)
+
+## Lancement de docker Api et MLflow 
+![alt text](image-3.png)
+![alt text](image-4.png)
