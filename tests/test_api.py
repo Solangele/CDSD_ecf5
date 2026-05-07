@@ -1,2 +1,2 @@
-def test_healthcheck():
+def test_simple():
     assert True
