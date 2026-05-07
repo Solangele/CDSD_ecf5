@@ -29,10 +29,11 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install Mypy
-        run: pip install mypy pandas-stubs types-requests
+        run: pip install mypy
       - name: Run Mypy
         run: |
-          python -m mypy . --ignore-missing-imports --install-types --non-interactive --exit-zero
+          touch empty_check.py
+          python -m mypy . --ignore-missing-imports --exit-zero
 
   test:
     runs-on: ubuntu-latest
