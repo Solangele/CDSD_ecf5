@@ -6,8 +6,8 @@ services:
       - "5000:5000"
     volumes:
       - ./mlflow_data:/mlflow_data
-      - ./mlruns:/app/mlruns        # <--- AJOUT CRUCIAL : On monte la DB
-    working_dir: /app               # On définit le dossier de travail
+      - ./mlruns:/app/mlruns
+    working_dir: /app
     command: >
       mlflow server 
       --backend-store-uri sqlite:////app/mlruns/mlflow.db
