@@ -3,19 +3,18 @@ from data import load_data, preprocess
 from evaluate import compute_metrics
 
 from sklearn.pipeline import Pipeline
-import pytest
-import pandas as pd
 
 DATA_PATH = "data/telco_churn.csv"
+
 
 def test_train_model_returns_fitted_pipeline():
     """Vérifie que la fonction train_model entraîne et est capable faire des prédictions"""
     df = load_data(DATA_PATH)
     X, y = preprocess(df)
-    
+
     params = {"n_estimators": 10, "max_depth": 2}
     model = train_model(X, y, "rf_test", params)
-    
+
     assert isinstance(model, Pipeline)
     preds = model.predict(X.head(5))
     assert len(preds) == 5

@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Request, Depends
-from pydantic import BaseModel, Field, validator
+from fastapi import FastAPI, Request
+from pydantic import BaseModel, Field
 from fastapi.responses import JSONResponse
-from typing import List, Optional
+from typing import List
 import pandas as pd
 import mlflow.sklearn
 from contextlib import asynccontextmanager
+
 
 # Schéma pour un client unique
 class CustomerData(BaseModel):
@@ -28,8 +29,10 @@ class CustomerData(BaseModel):
     MonthlyCharges: float = Field(gt=0)
     TotalCharges: float = Field(ge=0)
 
+
 # Global pour stocker le modèle
 MODELS = {}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,9 +42,9 @@ async def lifespan(app: FastAPI):
         model_name = "churnguard"
         stage = "Production"
         model_uri = f"models:/{model_name}/{stage}"
-        
+
         MODELS["model"] = mlflow.sklearn.load_model(model_uri)
-        
+
         client = mlflow.tracking.MlflowClient()
         latest = client.get_latest_versions(model_name, stages=[stage])[0]
         MODELS["version"] = latest.version
@@ -56,8 +59,8 @@ async def lifespan(app: FastAPI):
     MODELS.clear()
     print("Nettoyage effectué.")
 
-app = FastAPI(title="ChurnGuard API", lifespan=lifespan)
 
+app = FastAPI(title="ChurnGuard API", lifespan=lifespan)
 
 
 @app.exception_handler(ValueError)
@@ -67,14 +70,14 @@ async def value_error_exception_handler(request: Request, exc: ValueError):
     et les transforme en erreur HTTP 400.
     """
     message = str(exc)
-    
+
     # Si l'erreur concerne la disponibilité du modèle -> 503
     if "disponible" in message or "chargé" in message:
         status_code = 503
     else:
         # Sinon, c'est une erreur client (batch vide, etc.) -> 400
         status_code = 400
-        
+
     return JSONResponse(
         status_code=status_code,
         content={"message": message},
@@ -85,11 +88,8 @@ async def value_error_exception_handler(request: Request, exc: ValueError):
 async def health():
     if not MODELS.get("model"):
         raise ValueError("Le service est indisponible : modèle non chargé.")
-    return {
-        "status": "ok", 
-        "model": "churnguard", 
-        "version": MODELS.get("version")
-    }
+    return {"status": "ok", "model": "churnguard", "version": MODELS.get("version")}
+
 
 @app.post("/predict")
 async def predict(customer: CustomerData):
@@ -103,29 +103,25 @@ async def predict(customer: CustomerData):
     try:
         probs = MODELS["model"].predict_proba(df)
         prob_churn = float(probs[0][1])
-    except:
+    except Exception:
         prob_churn = 1.0 if prediction == 1 else 0.0
 
-    return {
-        "churn": bool(prediction),
-        "probability": round(prob_churn, 4)
-    }
-
+    return {"churn": bool(prediction), "probability": round(prob_churn, 4)}
 
 
 @app.post("/predict/batch")
 async def predict_batch(customers: List[CustomerData]):
     if not 1 <= len(customers) <= 100:
         raise ValueError("La taille du lot (batch) doit être entre 1 et 100 clients.")
-    
+
     if not MODELS.get("model"):
         raise ValueError("Modèle non disponible")
 
     df = pd.DataFrame([c.model_dump() for c in customers])
-    
+
     probs_churn = MODELS["model"].predict(df)[:, 1]
     preds = MODELS["model"].predict(df)
-    
+
     return [
         {"churn": bool(p), "probability": round(float(pr), 4)}
         for p, pr in zip(preds, probs_churn)
