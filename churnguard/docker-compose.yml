@@ -1,0 +1,37 @@
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.11.3
+    container_name: mlflow_server
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlflow_data  
+    command: >
+      mlflow server 
+      --backend-store-uri sqlite:////mlflow_data/mlflow.db 
+      --default-artifact-root /mlflow_data 
+      --host 0.0.0.0 
+      --port 5000
+    networks:
+      - churn_network
+
+  api:
+    build: .
+    container_name: churnguard_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./mlruns:/mlflow_data
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_DISABLE_ENV_MANAGER_CONDA=True
+      - GIT_PYTHON_REFRESH=quiet
+      - MLFLOW_TRACKING_SERVER_CERT_VERIFY=False
+    depends_on:
+      - mlflow
+    networks:
+      - churn_network
+
+networks:
+  churn_network:
+    driver: bridge

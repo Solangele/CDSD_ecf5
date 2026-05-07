@@ -1,0 +1,8 @@
+pandas
+numpy
+scikit-learn
+jupyter
+pytest-cov
+fastapi
+uvicorn
+mlflow==2.11.3

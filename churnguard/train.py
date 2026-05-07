@@ -1,7 +1,9 @@
 import pandas as pd
 import mlflow
 import mlflow.sklearn
-from mlflow.models.signature import infer_signature
+import shutil
+import os
+from mlflow.models import infer_signature
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
@@ -10,8 +12,8 @@ from sklearn.compose import ColumnTransformer
 from mlflow.tracking import MlflowClient
 
 
-from data import load_data, preprocess
-from evaluate import compute_metrics
+from .data import load_data, preprocess
+from .evaluate import compute_metrics
 
 def train_model(X, y, model_name: str, params: dict) -> Pipeline:
     """Entraîne le modèle et retourne le pipeline (Fonction demandée étape 1.2)."""
@@ -42,10 +44,10 @@ def train_model(X, y, model_name: str, params: dict) -> Pipeline:
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://localhost:5000")
+    mlflow.set_tracking_uri("http://mlflow:5000")
     mlflow.set_experiment("Telco_Churn_Industrialization")
 
-    df = load_data("data/telco_churn.csv")
+    df = load_data("/app/churnguard/data/telco_churn.csv")
     X, y = preprocess(df)
     
     experiments = [
@@ -55,7 +57,7 @@ if __name__ == "__main__":
     ]
 
     for run_name, params in experiments:
-        with mlflow.start_run(run_name=run_name):
+        with mlflow.start_run(run_name=run_name) as run:
             print(f"Lancement de l'entraînement : {run_name}")
             
             model = train_model(X, y, run_name, params)
@@ -68,13 +70,24 @@ if __name__ == "__main__":
             signature = infer_signature(X, model.predict(X))
             input_example = X.head(1)
             
-            mlflow.sklearn.log_model(
+            temp_model_path = f"temp_model_{run_name}"
+            if os.path.exists(temp_model_path):
+                shutil.rmtree(temp_model_path)
+            
+            mlflow.sklearn.save_model(
                 sk_model=model,
-                artifact_path="model",
+                path=temp_model_path,
                 signature=signature,
                 input_example=input_example
             )
-            print(f"Run {run_name} terminé avec succès.")
+            
+            # 2. Envoi vers le serveur MLflow comme un simple dossier d'artéfacts
+            mlflow.log_artifacts(temp_model_path, artifact_path="model")
+            
+            # 3. Nettoyage
+            shutil.rmtree(temp_model_path)
+            run_id = run.info.run_id
+            print(f"Modèle loggé avec succès ! Run ID: {run_id}")
 
         
     # --- ÉTAPE 1.5 AUTOMATISÉE : SÉLECTION DU MEILLEUR MODÈLE ---

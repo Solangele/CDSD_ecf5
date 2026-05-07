@@ -34,25 +34,28 @@ MODELS = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
-
-    # Chargement au démarrage
+    # --- STARTUP ---
+    mlflow.set_tracking_uri("http://mlflow:5000")
     try:
         model_name = "churnguard"
         stage = "Production"
         model_uri = f"models:/{model_name}/{stage}"
+        
         MODELS["model"] = mlflow.sklearn.load_model(model_uri)
-        # On récupère la version pour le /health
+        
         client = mlflow.tracking.MlflowClient()
         latest = client.get_latest_versions(model_name, stages=[stage])[0]
         MODELS["version"] = latest.version
         print(f"Modèle {model_name} v{MODELS['version']} chargé.")
     except Exception as e:
-        print(f"Erreur chargement modèle : {e}")
+        print(f"ERREUR CRITIQUE chargement modèle : {e}")
         MODELS["model"] = None
+        MODELS["version"] = "unknown"
+
     yield
     # Nettoyage si besoin
     MODELS.clear()
+    print("Nettoyage effectué.")
 
 app = FastAPI(title="ChurnGuard API", lifespan=lifespan)
 
@@ -93,19 +96,23 @@ async def health():
 async def predict(customer: CustomerData):
     if not MODELS.get("model"):
         raise ValueError("Modèle non disponible.")
-    
-    # Transformation en DataFrame (format attendu par scikit-learn)
+
     df = pd.DataFrame([customer.model_dump()])
-    
-    # Prédiction
-    prob = MODELS["model"].predict_proba(df)
-    prob_churn = prob[0][1]
-    prediction = MODELS["model"].predict(df)[0]
-    
+    res_pred = MODELS["model"].predict(df)
+    prediction = int(res_pred[0])
+
+    try:
+        probs = MODELS["model"].predict_proba(df)
+        prob_churn = float(probs[0][1])
+    except:
+        prob_churn = 1.0 if prediction == 1 else 0.0
+
     return {
         "churn": bool(prediction),
-        "probability": round(float(prob_churn), 4)
+        "probability": round(prob_churn, 4)
     }
+
+
 
 @app.post("/predict/batch")
 async def predict_batch(customers: List[CustomerData]):
@@ -117,7 +124,7 @@ async def predict_batch(customers: List[CustomerData]):
 
     df = pd.DataFrame([c.model_dump() for c in customers])
     
-    probs_churn = MODELS["model"].predict_proba(df)[:, 1]
+    probs_churn = MODELS["model"].predict(df)[:, 1]
     preds = MODELS["model"].predict(df)
     
     return [
